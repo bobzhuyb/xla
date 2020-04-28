@@ -15,8 +15,19 @@ namespace {
 
 xla::BitGeneratorTy GetBitGenerator() {
   static const std::string* bit_generator = new std::string(
-      xla::sys_util::GetEnvString("XLA_RNG_BIT_GENERATOR", "philox"));
-  if (*bit_generator == "philox") {
+      xla::sys_util::GetEnvString("XLA_RNG_BIT_GENERATOR", "default"));
+  if (*bit_generator == "default") {
+    return [](xla::XlaOp key, xla::XlaOp state, const xla::Shape& shape) {
+      // CPU and GPU backends currently default to Philox as RNG_DEFAULT, and
+      // Philox wants a 3 elements state. This should be fixed internally in
+      // order to make generators more resilient on state shapes.
+      state = xla::ConcatScalars(key.builder(), {key, state, key});
+      xla::XlaOp result =
+          xla::RngBitGenerator(xla::RandomAlgorithm::RNG_DEFAULT, state, shape);
+      return xla::RngOutput{/*value=*/xla::GetTupleElement(result, 1),
+                            /*state=*/xla::GetTupleElement(result, 0)};
+    };
+  } else if (*bit_generator == "philox") {
     return [](xla::XlaOp key, xla::XlaOp state, const xla::Shape& shape) {
       std::tie(state, key) = xla::ScramblePhiloxKey(key);
       return xla::PhiloxBitGenerator(key, state, shape);

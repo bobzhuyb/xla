@@ -102,12 +102,12 @@ def train_imagenet():
   if FLAGS.fake_data:
     train_dataset_len = 1200000  # Roughly the size of Imagenet dataset.
     train_loader = xu.SampleGenerator(
-        data=(torch.zeros(FLAGS.batch_size, 3, img_dim, img_dim),
+        data=(torch.zeros(FLAGS.batch_size, 3, img_dim, img_dim, dtype=torch.half),
               torch.zeros(FLAGS.batch_size, dtype=torch.int64)),
         sample_count=train_dataset_len // FLAGS.batch_size //
         xm.xrt_world_size())
     test_loader = xu.SampleGenerator(
-        data=(torch.zeros(FLAGS.test_set_batch_size, 3, img_dim, img_dim),
+        data=(torch.zeros(FLAGS.test_set_batch_size, 3, img_dim, img_dim, dtype=torch.half),
               torch.zeros(FLAGS.test_set_batch_size, dtype=torch.int64)),
         sample_count=50000 // FLAGS.batch_size // xm.xrt_world_size())
   else:
@@ -169,7 +169,8 @@ def train_imagenet():
       xm.get_xla_supported_devices(
           max_devices=FLAGS.num_cores) if FLAGS.num_cores != 0 else [])
   # Pass [] as device_ids to run using the PyTorch/CPU engine.
-  torchvision_model = get_model_property('model_fn')
+  torchvision_model = get_model_property('model_fn')()
+  torchvision_model.half()
   model_parallel = dp.DataParallel(torchvision_model, device_ids=devices)
 
   def train_loop_fn(model, loader, device, context):

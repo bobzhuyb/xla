@@ -152,12 +152,14 @@ ir::NodePtr IndexFillOp(const ir::Value& buffer, xla::int64 dim,
     xla::XlaOp xla_base = loctx->GetOutputOp(node.operand(0));
     xla::XlaOp xla_index = loctx->GetOutputOp(node.operand(1));
     xla::XlaOp xla_value = loctx->GetOutputOp(node.operand(2));
-    return node.ReturnOp(CreateIndexFill(xla_base, dim, xla_index, xla_value),
+    return node.ReturnOp(CreateIndexFill(XlaHelpers::MakeArray(xla_base), dim,
+                                         xla_index, xla_value),
                          loctx);
   };
   auto lower_for_shape_fn =
       [dim](absl::Span<const xla::XlaOp> operands) -> xla::XlaOp {
-    return CreateIndexFill(operands[0], dim, operands[1], operands[2]);
+    return CreateIndexFill(XlaHelpers::MakeArray(operands[0]), dim, operands[1],
+                           operands[2]);
   };
   ir::Value index_rank1 = EnsureRank1(index);
   return ir::ops::GenericOp(
@@ -177,12 +179,16 @@ ir::NodePtr IndexAddOp(const ir::Value& buffer, xla::int64 dim,
     xla::XlaOp xla_base = loctx->GetOutputOp(node.operand(0));
     xla::XlaOp xla_index = loctx->GetOutputOp(node.operand(1));
     xla::XlaOp xla_source = loctx->GetOutputOp(node.operand(2));
-    return node.ReturnOp(CreateIndexAdd(xla_base, dim, xla_index, xla_source),
+    return node.ReturnOp(CreateIndexAdd(XlaHelpers::MakeArray(xla_base), dim,
+                                        XlaHelpers::MakeArray(xla_index),
+                                        XlaHelpers::MakeArray(xla_source)),
                          loctx);
   };
   auto lower_for_shape_fn =
       [dim](absl::Span<const xla::XlaOp> operands) -> xla::XlaOp {
-    return CreateIndexAdd(operands[0], dim, operands[1], operands[2]);
+    return CreateIndexAdd(XlaHelpers::MakeArray(operands[0]), dim,
+                          XlaHelpers::MakeArray(operands[1]),
+                          XlaHelpers::MakeArray(operands[2]));
   };
   ir::Value index_rank1 = EnsureRank1(index);
   return ir::ops::GenericOp(
@@ -202,12 +208,16 @@ ir::NodePtr IndexCopyOp(const ir::Value& buffer, xla::int64 dim,
     xla::XlaOp xla_base = loctx->GetOutputOp(node.operand(0));
     xla::XlaOp xla_index = loctx->GetOutputOp(node.operand(1));
     xla::XlaOp xla_source = loctx->GetOutputOp(node.operand(2));
-    return node.ReturnOp(CreateIndexCopy(xla_base, dim, xla_index, xla_source),
+    return node.ReturnOp(CreateIndexCopy(XlaHelpers::MakeArray(xla_base), dim,
+                                         XlaHelpers::MakeArray(xla_index),
+                                         XlaHelpers::MakeArray(xla_source)),
                          loctx);
   };
   auto lower_for_shape_fn =
       [dim](absl::Span<const xla::XlaOp> operands) -> xla::XlaOp {
-    return CreateIndexCopy(operands[0], dim, operands[1], operands[2]);
+    return CreateIndexCopy(XlaHelpers::MakeArray(operands[0]), dim,
+                           XlaHelpers::MakeArray(operands[1]),
+                           XlaHelpers::MakeArray(operands[2]));
   };
   ir::Value index_rank1 = EnsureRank1(index);
   return ir::ops::GenericOp(

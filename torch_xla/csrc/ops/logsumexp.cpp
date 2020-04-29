@@ -19,7 +19,8 @@ xla::Shape NodeOutputShape(const Value& input,
                            bool keep_reduced_dimensions) {
   auto lower_for_shape_fn =
       [&](absl::Span<const xla::XlaOp> operands) -> xla::XlaOp {
-    return BuildLogsumexp(operands[0], dimensions, keep_reduced_dimensions);
+    return BuildLogsumexp(XlaHelpers::MakeArray(operands[0]), dimensions,
+                          keep_reduced_dimensions);
   };
   return InferOutputShape({input.shape()}, lower_for_shape_fn);
 }
@@ -44,7 +45,8 @@ NodePtr Logsumexp::Clone(OpList operands) const {
 
 XlaOpVector Logsumexp::Lower(LoweringContext* loctx) const {
   xla::XlaOp input = loctx->GetOutputOp(operand(0));
-  return ReturnOp(BuildLogsumexp(input, dimensions_, keep_reduced_dimensions_),
+  return ReturnOp(BuildLogsumexp(XlaHelpers::MakeArray(input), dimensions_,
+                                 keep_reduced_dimensions_),
                   loctx);
 }
 

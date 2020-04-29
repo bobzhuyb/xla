@@ -1,6 +1,7 @@
 #include "torch_xla/csrc/ops/max_in_dim.h"
 
 #include "tensorflow/compiler/xla/xla_client/util.h"
+#include "torch_xla/csrc/helpers.h"
 #include "torch_xla/csrc/lowering_context.h"
 #include "torch_xla/csrc/ops/infer_output_shape.h"
 #include "torch_xla/csrc/reduction.h"
@@ -13,8 +14,10 @@ namespace {
 xla::Shape NodeOutputShape(const Value& input, xla::int64 dim, bool keepdim) {
   auto lower_for_shape_fn =
       [&](absl::Span<const xla::XlaOp> operands) -> xla::XlaOp {
-    xla::XlaOp values = BuildMaxInDim(operands[0], dim, keepdim);
-    xla::XlaOp indices = BuildArgMax(operands[0], dim, keepdim);
+    xla::XlaOp values =
+        BuildMaxInDim(XlaHelpers::MakeArray(operands[0]), dim, keepdim);
+    xla::XlaOp indices =
+        BuildArgMax(XlaHelpers::MakeArray(operands[0]), dim, keepdim);
     return xla::Tuple(values.builder(), {values, indices});
   };
   return InferOutputShape({input.shape()}, lower_for_shape_fn);
@@ -35,8 +38,10 @@ NodePtr MaxInDim::Clone(OpList operands) const {
 
 XlaOpVector MaxInDim::Lower(LoweringContext* loctx) const {
   xla::XlaOp input = loctx->GetOutputOp(operand(0));
-  xla::XlaOp values = BuildMaxInDim(input, dim_, keepdim_);
-  xla::XlaOp indices = BuildArgMax(input, dim_, keepdim_);
+  xla::XlaOp values =
+      BuildMaxInDim(XlaHelpers::MakeArray(input), dim_, keepdim_);
+  xla::XlaOp indices =
+      BuildArgMax(XlaHelpers::MakeArray(input), dim_, keepdim_);
   return ReturnOps({values, indices}, loctx);
 }
 

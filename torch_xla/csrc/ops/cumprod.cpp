@@ -50,7 +50,12 @@ NodePtr CumProd::Clone(OpList operands) const {
 
 XlaOpVector CumProd::Lower(LoweringContext* loctx) const {
   xla::XlaOp input = loctx->GetOutputOp(operand(0));
-  return ReturnOp(LowerCumProd(input, dim_, dtype_), loctx);
+  xla::Shape input_shape;
+  return ReturnOp(XlaHelpers::MaybeReshapeAs(
+                      LowerCumProd(XlaHelpers::MakeArray(input, &input_shape),
+                                   dim_, dtype_),
+                      input_shape),
+                  loctx);
 }
 
 std::string CumProd::ToString() const {

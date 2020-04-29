@@ -1,6 +1,7 @@
 #include "torch_xla/csrc/ops/kth_value.h"
 
 #include "tensorflow/compiler/xla/xla_client/util.h"
+#include "torch_xla/csrc/helpers.h"
 #include "torch_xla/csrc/lowering_context.h"
 #include "torch_xla/csrc/ops/infer_output_shape.h"
 #include "torch_xla/csrc/xla_lower_util.h"
@@ -14,8 +15,9 @@ xla::Shape NodeOutputShape(const Value& input, xla::int64 k, xla::int64 dim,
                            bool keepdim) {
   auto lower_for_shape_fn =
       [&](absl::Span<const xla::XlaOp> operands) -> xla::XlaOp {
-    return xla::Tuple(operands[0].builder(),
-                      CreateKthValue(operands[0], k, dim, keepdim));
+    return xla::Tuple(
+        operands[0].builder(),
+        CreateKthValue(XlaHelpers::MakeArray(operands[0]), k, dim, keepdim));
   };
   return InferOutputShape({input.shape()}, lower_for_shape_fn);
 }
@@ -37,7 +39,8 @@ NodePtr KthValue::Clone(OpList operands) const {
 
 XlaOpVector KthValue::Lower(LoweringContext* loctx) const {
   xla::XlaOp input = loctx->GetOutputOp(operand(0));
-  return ReturnOps(CreateKthValue(input, k_, dim_, keepdim_), loctx);
+  return ReturnOps(
+      CreateKthValue(XlaHelpers::MakeArray(input), k_, dim_, keepdim_), loctx);
 }
 
 std::string KthValue::ToString() const {
